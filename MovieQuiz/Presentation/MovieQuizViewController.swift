@@ -74,7 +74,9 @@ final class MovieQuizViewController: UIViewController {
     // переменная со счётчиком правильных ответов, начальное значение закономерно 0
     private var correctAnswers = 0
     
-    @IBOutlet weak var buttonYes: UIButton!
+    @IBOutlet private weak var buttonYes: UIButton!
+    
+    @IBOutlet private weak var buttonNo: UIButton!
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
         let isCorrect = questions[currentQuestionIndex].correctAnswer
@@ -130,6 +132,8 @@ final class MovieQuizViewController: UIViewController {
         } else {
             imageView.layer.borderColor = UIColor.ypRed.cgColor
         }
+        buttonYes.isEnabled = false
+        buttonNo.isEnabled = false
         
         // запускаем задачу через 1 секунду c помощью диспетчера задач
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -137,6 +141,8 @@ final class MovieQuizViewController: UIViewController {
             
             self.showNextQuestionOrResults()
             self.imageView.layer.borderColor = UIColor.ypBlack.cgColor
+            self.buttonYes.isEnabled = true
+            self.buttonNo.isEnabled = true
         }
     }
     
