@@ -7,7 +7,10 @@
 
 import Foundation
 
-class QuestionFactory {
+class QuestionFactory: QuestionFactoryProtocol  {
+    
+    weak var delegate: QuestionFactoryDelegate?
+    
     private let questions: [QuizQuestion] = [
         QuizQuestion(image: "The Godfather",
                      text: "Рейтинг этого фильма больше чем 6?",
@@ -41,12 +44,24 @@ class QuestionFactory {
                      correctAnswer: false)
     ]
     
-    func requestNextQuestion() -> QuizQuestion? { // 1
-        // 2
-        guard let index = (0..<questions.count).randomElement() else {
-            return nil
+    private var previousIndexes = Set<Int>()
+    
+    func requestNextQuestion() {
+        guard let index = (0..<questions.count).randomElement(),
+        previousIndexes.count < questions.count else {
+            delegate?.didReceiveNextQuestion(question: nil)
+            return
         }
-
-        return questions[safe: index] // 3
+        if previousIndexes.contains(index) {
+            requestNextQuestion()
+        } else {
+            previousIndexes.insert(index)
+            let question = questions[safe: index]
+            delegate?.didReceiveNextQuestion(question: question)
+        }
+    }
+    
+    func resetPreviousIndexes() {
+        previousIndexes.removeAll()
     }
 }
