@@ -44,24 +44,21 @@ class QuestionFactory: QuestionFactoryProtocol  {
                      correctAnswer: false)
     ]
     
-    private var previousIndexes = Set<Int>()
+    private lazy var previousIndexes = Set(0..<questions.count)
     
     func requestNextQuestion() {
-        guard let index = (0..<questions.count).randomElement(),
-        previousIndexes.count < questions.count else {
-            delegate?.didReceiveNextQuestion(question: nil)
-            return
-        }
-        if previousIndexes.contains(index) {
-            requestNextQuestion()
-        } else {
-            previousIndexes.insert(index)
-            let question = questions[safe: index]
-            delegate?.didReceiveNextQuestion(question: question)
-        }
+        
+        guard let index = previousIndexes.randomElement() else {
+                  delegate?.didReceiveNextQuestion(question: nil)
+                  return
+              }
+        
+        let question = questions[safe: index]
+        delegate?.didReceiveNextQuestion(question: question)
+        previousIndexes.remove(index)
     }
     
     func resetPreviousIndexes() {
-        previousIndexes.removeAll()
+        previousIndexes = Set(0..<questions.count)
     }
 }
