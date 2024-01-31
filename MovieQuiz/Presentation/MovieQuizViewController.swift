@@ -1,14 +1,16 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController {
+final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate   {
     // MARK: - Lifecycle
     
     // переменная с индексом текущего вопроса, начальное значение 0
     // (по этому индексу будем искать вопрос в массиве, где индекс первого элемента 0, а не 1)
     private var currentQuestionIndex = 0
     private let questionsAmount: Int = 10
-    private var questionFactory: QuestionFactory = QuestionFactory()
+    private lazy var questionFactory: QuestionFactoryProtocol? = QuestionFactory()
     private var currentQuestion: QuizQuestion?
+    private let alert = AlertPresenter()
+    private let statisticService: StatisticService = StatisticServiceImplementation()
     
     // переменная со счётчиком правильных ответов, начальное значение закономерно 0
     private var correctAnswers = 0
@@ -39,15 +41,33 @@ final class MovieQuizViewController: UIViewController {
     
     @IBOutlet private var counterLabel: UILabel!
     
+    // MARK: - Actions
+    
     override func viewDidLoad() {
-        if let firstQuestion = questionFactory.requestNextQuestion() {
-            currentQuestion = firstQuestion
-            let viewModel = convert(model: firstQuestion)
-            show(quiz: viewModel)
-        }
-        super.viewDidLoad()
         
+        super.viewDidLoad()
+        questionFactory?.delegate = self
+        alert.delegate = self
+        questionFactory?.requestNextQuestion()
     }
+    
+    // MARK: - QuestionFactoryDelegate
+    
+    
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else {
+            return
+        }
+
+        currentQuestion = question
+        let viewModel = convert(model: question)
+        DispatchQueue.main.async { [weak self] in
+            self?.show(quiz: viewModel)
+        }
+    }
+    
+    
+    // MARK: - Private functions
     
     // метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
@@ -103,113 +123,40 @@ final class MovieQuizViewController: UIViewController {
       if currentQuestionIndex == questionsAmount - 1 { // 1
         // идём в состояние "Результат квиза"
           // константа с кнопкой для системного алерта
-          let text = correctAnswers == questionsAmount ?
-                      "Поздравляем, вы ответили на 10 из 10!" :
-                      "Вы ответили на \(correctAnswers) из 10, попробуйте ещё раз!"
-          show(quiz: QuizResultsViewModel(title: "Этот раунд окончен!",
-                                          text: text,
-                                          buttonText: "Сыграть еще раз"))
+          questionFactory?.resetPreviousIndexes()
+          
+          statisticService.store(correct: correctAnswers, total: questionsAmount)
+          
+          let total = statisticService.gamesCount
+          let accuracy = statisticService.totalAccuracy
+          let bestGame = statisticService.bestGame
+          
+          let text = """
+              Ваш результат: \(correctAnswers)/\(questionsAmount)
+              Количество сыгранных квизов: \(total)
+              Рекорд: \(bestGame.correct)/\(bestGame.total) (\(bestGame.date.dateTimeString))
+              Средняя точность: \(String(format: "%.2f", accuracy * 100))%
+          """
+          
+          let alertModel = AlertModel(title: "Этот раунд окончен!",
+                                      message: text,
+                                      buttonText: "Сыграть еще раз",
+                                      completion: { [weak self] in
+              self?.resetQuiz() }
+          )
+          alert.showAlert(alertModel)
+          
       } else { // 2
           currentQuestionIndex += 1
-          if let nextQuestion = questionFactory.requestNextQuestion() {
-              currentQuestion = nextQuestion
-              let viewModel = convert(model: nextQuestion)
-
-              show(quiz: viewModel)
-          }
+          questionFactory?.requestNextQuestion()
       }
         // идём в состояние "Вопрос показан"
     }
     
-    // приватный метод для показа результатов раунда квиза
-    // принимает вью модель QuizResultsViewModel и ничего не возвращает
-    private func show(quiz result: QuizResultsViewModel) {
-        // попробуйте написать код создания и показа алерта с результатами
-        let alert = UIAlertController(title: result.title, // заголовок всплывающего окна
-                                      message: result.text, // текст во всплывающем окне
-                                      preferredStyle: .alert)
-        let action = UIAlertAction(title: result.buttonText, style: .default) { [weak self] _ in
-          // код, который сбрасывает игру и показывает первый вопрос
-            
-            guard let self = self else { return }
-            self.currentQuestionIndex = 0
-            self.correctAnswers = 0
-            
-            if let firstQuestion = self.questionFactory.requestNextQuestion() {
-                self.currentQuestion = firstQuestion
-                let viewModel = self.convert(model: firstQuestion)
-
-                self.show(quiz: viewModel)
-            }
-        }
-        alert.addAction(action)
-
-        // показываем всплывающее окно
-        self.present(alert, animated: true, completion: nil)
+    private func resetQuiz() {
+        
+        currentQuestionIndex = 0
+        correctAnswers = 0
+        questionFactory?.requestNextQuestion()
     }
 }
-
-
-/*
- Mock-данные
- 
- 
- Картинка: The Godfather
- Настоящий рейтинг: 9,2
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
-
-
- Картинка: The Dark Knight
- Настоящий рейтинг: 9
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
-
-
- Картинка: Kill Bill
- Настоящий рейтинг: 8,1
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
-
-
- Картинка: The Avengers
- Настоящий рейтинг: 8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
-
-
- Картинка: Deadpool
- Настоящий рейтинг: 8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
-
-
- Картинка: The Green Knight
- Настоящий рейтинг: 6,6
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: ДА
-
-
- Картинка: Old
- Настоящий рейтинг: 5,8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
-
-
- Картинка: The Ice Age Adventures of Buck Wild
- Настоящий рейтинг: 4,3
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
-
-
- Картинка: Tesla
- Настоящий рейтинг: 5,1
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
-
-
- Картинка: Vivarium
- Настоящий рейтинг: 5,8
- Вопрос: Рейтинг этого фильма больше чем 6?
- Ответ: НЕТ
- */
