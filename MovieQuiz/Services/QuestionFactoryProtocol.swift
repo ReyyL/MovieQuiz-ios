@@ -13,6 +13,8 @@ protocol QuestionFactoryProtocol {
     
     func resetPreviousIndexes()
     
+    func loadData()
+    
     var delegate: QuestionFactoryDelegate? { get set }
     
 }
