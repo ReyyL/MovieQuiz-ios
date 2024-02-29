@@ -10,7 +10,7 @@ import UIKit
 final class MovieQuizPresenter: QuestionFactoryDelegate {
     
     
-    private let statisticService: StatisticService!
+    private let statisticService: StatisticService?
     private var questionFactory: QuestionFactoryProtocol?
     private weak var viewController: MovieQuizViewControllerProtocol?
 
@@ -81,12 +81,8 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         )
     }
 
-    func yesButtonClicked() {
-        didAnswer(isYes: true)
-    }
-
-    func noButtonClicked() {
-        didAnswer(isYes: false)
+    func yesOrNoButtonClicked(isYes: Bool) {
+        didAnswer(isYes: isYes)
     }
     
 
@@ -129,6 +125,11 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     }
 
     func makeResultsMessage() -> String {
+        
+        guard let statisticService = statisticService else {
+                return "Statistic service is nil"
+            }
+        
         statisticService.store(correct: correctAnswers, total: questionsAmount)
 
         let bestGame = statisticService.bestGame
