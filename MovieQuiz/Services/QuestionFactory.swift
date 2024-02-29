@@ -20,39 +20,6 @@ class QuestionFactory: QuestionFactoryProtocol  {
         self.delegate = delegate
     }
     
-//    private let questions: [QuizQuestion] = [
-//        QuizQuestion(image: "The Godfather",
-//                     text: "Рейтинг этого фильма больше чем 6?",
-//                     correctAnswer: true),
-//        QuizQuestion(image: "The Dark Knight",
-//                     text: "Рейтинг этого фильма больше чем 6?",
-//                     correctAnswer: true),
-//        QuizQuestion(image: "Kill Bill",
-//                     text: "Рейтинг этого фильма больше чем 6?",
-//                     correctAnswer: true),
-//        QuizQuestion(image: "The Avengers",
-//                     text: "Рейтинг этого фильма больше чем 6?",
-//                     correctAnswer: true),
-//        QuizQuestion(image: "Deadpool",
-//                     text: "Рейтинг этого фильма больше чем 6?",
-//                     correctAnswer: true),
-//        QuizQuestion(image: "The Green Knight",
-//                     text: "Рейтинг этого фильма больше чем 6?",
-//                     correctAnswer: true),
-//        QuizQuestion(image: "Old",
-//                     text: "Рейтинг этого фильма больше чем 6?",
-//                     correctAnswer: false),
-//        QuizQuestion(image: "The Ice Age Adventures of Buck Wild",
-//                     text: "Рейтинг этого фильма больше чем 6?",
-//                     correctAnswer: false),
-//        QuizQuestion(image: "Tesla",
-//                     text: "Рейтинг этого фильма больше чем 6?",
-//                     correctAnswer: false),
-//        QuizQuestion(image: "Vivarium",
-//                     text: "Рейтинг этого фильма больше чем 6?",
-//                     correctAnswer: false)
-//    ]
-    
     private lazy var previousIndexes = Set(0..<movies.count)
     
     func requestNextQuestion() {
@@ -96,10 +63,7 @@ class QuestionFactory: QuestionFactoryProtocol  {
                 
                 switch result {
                 case .success(let mostPopularMovies):
-                    if mostPopularMovies.items.isEmpty {
-                        print(mostPopularMovies)
-                        self.delegate?.didFailToLoadData(with: mostPopularMovies.errorMessage)
-                    } //обработка кейса, когда кончился лимит использований апи в день или акк бесплатный
+                     //обработка кейса, когда кончился лимит использований апи в день или акк бесплатный
                     self.movies = mostPopularMovies.items
                     self.delegate?.didLoadDataFromServer()
                 case .failure(let error):
